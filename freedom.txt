@@ -1,0 +1,130 @@
+
+Computer related notes
+
+    About
+    Contact
+
+Setup Ubuntu Server on VirtualBox to use as a primary dev environment
+
+    July 19, 2011 – 9:57 pm
+    Posted in Computer Tweaks, Web Development
+
+HEADS UP: This is going to be cleaned up sometime soon… just too tired… Mainly, at the end, I kind of slap on the NAT network thing and the note on how to add users to the vboxsf group to properlly use the VirtualBox Shared File auto mount on system boot.
+
+Use VirtualBox to host Ubuntu Server (64 bit) use as a web server. To ease daily / local development, we will need to make sure the files are saved to the host machine (in this case my Macbook) so that there is no need to share files through the network. The idea is that it’s not at all ideal to use a text editor like an IDE over something like AFP or SMB.
+
+So… this is what we’ll be doing.
+
+    Install VirtualBox (if not already.)
+    Create a new Ubuntu virtual machine.
+    Setup Ubuntu to be a very basic web server with Apache, MySQL and PHP.
+    Setup the Ubuntu guest to have access to a shared folder on the host machine.
+
+Stuff you’ll need, so download it all first…
+
+VirtualBox (version 4.0.8 r71778 is used for this walk-through)
+http://www.virtualbox.org
+
+Ubuntu (ubuntu-11.04-server-amd64.iso is the version used for this walk-through)
+http://www.ubuntu.com/download/server/download
+Make sure you have VirtualBox installed
+
+Just download it and follow the instructions.
+
+After you install, it’s a good time to locate an ISO file you’ll need ONLY if your using the server edition (e.g. no GUI.)
+
+- Under your /Applications folder locate the VirtualBox app
+- Right-click the app, and select Show Package Contents
+- Copy the file Contents/MacOS/VBoxGuestAdditions.iso somewhere (say next to the Ubuntu iso file.)
+
+Later we’ll need this file, so just remember where it is.
+Setup Ubuntu (Ubuntu Server 11.04)
+
+I’m going to use the server edition. It’s a smaller download being that the GUI is not used and it’s not needed for development lots of times. This will however increase the complexity being that later when we go to setup the shared drive (step 4) we need to jump some hurdles a bit to install the VirtualBox Guest tools. BUT… go big or go home!.
+
+Note: If you want the full desktop version of Ubuntu, go ahead and download the desktop version instead, the rest of the steps should be the same, but you will probably be able to figure out how to setup the VirtualBox Guest Tools yourself.
+
+Now, create the virtual machine (this may vary per your hard drive requirements)
+
+- open up VirtualBox and click New, you should be directed to a wizard
+- name your vm something like "UbuntuServer - 64bit"
+- make sure Linux and Ubuntu 64bit is selected under "os type"
+- select maybe 512 or 1024 mb for ram
+- create a new hard drive (vdi) image for your system, when you click next you'll get a sub-wizard
+- name your hard drive image (vdi) whatever, I named it to be the same as my vm
+- eventually you'll get a summary / confirmation page. make sure it's what you want and click Done
+
+Now you could start your new VM, but first make sure you tell virtual box to mount the Ubuntu iso you just downloaded so you can install it. (Just like you would make sure a bootable CD was available to boot when installing an OS.)
+
+To make the ISO available to the cd…
+
+- Select the Ubuntu VM in VirtualBox
+- Click "Settings" then go to "Storage"
+- Click "Empty" under the IDE controller
+- Next to CD/DVD Drive, click the little CD icon next to the drop-down
+- Select "Choose a virtual CD/DVD disk file"
+- Locate the Ubuntu ISO file you downloaded.
+- Click OK
+
+Oh, and it would be good to double-check that in Settings/System the CD/DVD-ROM is above the Hard Disk in the Boot Order!
+
+In the menu under Devices/Network, I’m using NAT. Make sure you tweak your settings so your VM has network access also.
+
+Thats it, the VM is setup, now we install Ubuntu. Double-click / start the UbuntuServer Virtual Machine and read on.
+First Boot to install Ubuntu Server
+
+When you first start the VM, you should be prompted to install Ubuntu. I’m going to skim through this for the most part, noting a few things that were important to the process.
+
+IMPORTANT: Note the key you need to use to get out of the guest machine. After you click into Ubuntu, you’ll need to use left cmd button by default to get out of the VM!
+
+- Language: English
+- Install Ubuntu Server
+- ...
+- Hostname: ubuntuserver
+- Partion disks: Guided - use entire + LVM (use whole disk...)
+- Full Name of a user: Web Dev
+- User/Pass: webdev / webdev (or change to a stronger / different password / username)
+- Did not encrypt the drive
+- No proxy
+- No Automatic Updates
+- Software Selection: I selected [OpenSSH, LAMP server, Mail server]
+- MySQL pass: root
+- Postfix Config: Local only, System mail name "ubuntuserver.mail"
+- Installed Grub Boot Loader
+
+Finally, after that, when prompted to remove the CD and reboot, click the CD icon in the lower right to eject the ISO. Then click “Continue”.
+Configure the Guest Tools to get a Share working
+
+After you reboot, you should be prompted to login. You need to shut down, so just close out / power down the vm.
+
+Go back into the settings of the VM…
+
+- Under Shared Folders click the green "plus/folder" icon to create a new share
+- I'm using a folder in my Sites directory (/Users/chris/Sites/ubuntuserver), but you can use any folder.
+- Name the folder and click OK, then OK (get back to the VM list)
+
+IMPORTANT: The web server or other programs will probably need to write to that folder, so be careful to make sure you don’t select your whole drive or something. If something goes wrong on the guest machine, your host machine files could be lost! Just sayin.
+
+Install / make sure some extra stuff is ready. This is so that VirtualBox can take more control over the linux kernal thus allowing for things like seemless shared drives form host to guest and vise-versa. (See the http://www.virtualbox.org/manual/ch04.html#idp5848336 page under Ubuntu)
+
+In order to fully update your guest system, open a terminal and run
+
+- Now, boot up your UbuntuServer and login
+- sudo apt-get update
+- sudo apt-get upgrade
+- sudo apt-get install dkms
+- sudo reboot
+
+Boot up again then load the tools iso file (originally located at /Applications/VirtualBox/Contents/MacOS/VBoxGuestAdditions.iso via Show Package Contents on the VirtualBox app)
+
+- Click Devices / CD/DVD Devices / Choose a virtual CD/DVD disk file and locate the VBoxGuestAdditions.iso file
+
+Run a few more commands… you WILL get an error about not installing stuff with X Windows… thats fine.
+
+- sudo apt-get install hwinfo
+- sudo mount /dev/cdrom /media/cdrom
+- cd /media/cdrom
+- sudo ./VBoxLinuxAdditions.run
+- sudo reboot
+
+Finally…wdwdd
